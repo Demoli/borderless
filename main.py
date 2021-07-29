@@ -3,6 +3,7 @@ import shutil
 from typing import List, Dict
 import py7zr
 import click
+import patoolib
 
 from pyunpack import Archive
 
@@ -11,15 +12,17 @@ from cropper import process
 
 def get_files(path) -> Dict[str, List]:
     files = {}
-    for (dirpath, dirnames, filenames) in os.walk('inbox'):
+    for (dirpath, dirnames, filenames) in os.walk(path):
         files[dirpath] = filenames
 
     return files
 
 
-def export(filename):
+def export(filename: str, file_list: List[str]):
+    filename = filename.replace('cbr', 'cbz')
     with py7zr.SevenZipFile(filename, 'w') as z:
-        z.writeall('./outbox')
+        for file in file_list:
+            z.write(file, file.replace('outbox/', ''))
 
 
 def reset_dirs():
@@ -34,22 +37,24 @@ def reset_dirs():
 @click.argument('outpath', type=click.Path())
 @click.option('--margin', default=20, prompt='Margin in pixels to keep')
 def main(source, outpath, margin=20):
-
     reset_dirs()
-    Archive(source).extractall('inbox')
+    inbox = 'inbox'
+    Archive(source).extractall(inbox)
 
-    files = get_files('inbox')
+    files = get_files(inbox)
 
     for path, names in files.items():
         if not len(names):
             continue
 
         path = path.replace('\\', '/') + '/'
-        processed = []
+        exportable = []
         for name in names:
-            processed.append(process(path, name, margin))
+            exportable.append(process(path, name, margin))
 
-    export(outpath)
+    export(outpath, exportable)
+
+    reset_dirs()
 
 
 if __name__ == "__main__":
