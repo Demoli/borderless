@@ -20,6 +20,3 @@ def process(path: str, filename: str, margin: int):
     trim(im, margin).save(out_path + filename)
 
     return out_path + filename
-
-if __name__ == "__main__":
-    process('0007.jpg', margin=20)
